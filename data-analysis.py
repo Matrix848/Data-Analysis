@@ -130,21 +130,21 @@ def distrMtplt(data: list) -> list:
     return distrmtplt
 
 
-# Gaussian faunction 
+# Gaussian function 
 def gaussianFunction(x, stdev: float, mean_val: float()):
     
     y = (1 / (stdev * mh.sqrt(2 * mh.pi))) * np.exp(-0.5 * (((x - mean_val)/ stdev) ** 2))
     
     return y
 
-
+# Probability distribution function(PDF)
 def chi2PDF(x, ddof: int):
         
     y = (x**(ddof/2-1)) * np.exp(-x/2) / ((2**(ddof/2))*scipy.special.gamma(ddof/2))
     
     return y
 
-
+# Plot the gaussian function(gaussianFunction)
 def gaussianPlotter(data: list, center: float, color: str = None, label: str = None, ax: np.ndarray = None):
     if ax is not None:
         plt.sca(ax)
@@ -156,6 +156,7 @@ def gaussianPlotter(data: list, center: float, color: str = None, label: str = N
     plt.plot(x, gaussianFunction(x, stDev(data), center), color = color, label = label)
     
     
+# Plot the PDF
 def chi2PdfPlotter(data: list, ddof: int, alpha: float, size: float,color: str = None, label: str = None, ax: np.ndarray = None):
     if ax is not None:
         plt.sca(ax)
@@ -216,7 +217,7 @@ def chiSquare(data: list, size: float = None):
     
     return chisquare
 
-
+# Plot the histogram of the distribution/normal distribution
 def distrPlotter(data: list, size: float = None, error_bars: bool = False, bicolor: bool = False, color_1: str = '#ffb200', color_2: str = '#e67505', err_color: str = '#900C3F', normal: bool = False, label: str = None, ax = None):
     
     stdev = stDev(data)
@@ -245,7 +246,7 @@ def distrPlotter(data: list, size: float = None, error_bars: bool = False, bicol
     # Set which values to show on x ax
     plt.xticks(x_dis, [round(x_dis[i], 3) for i in range(len(x_dis))])
 
-
+# Plot the expected expected normal distribution of data based on the fitted gaussian curve 
 def expHistPlotter(data: list, size: float = None, normal: bool = False, width: float = None, alpha: float = None, color: str = None, label: str = None, ax: np.ndarray = None):
     stdev = stDev(data)
     mean_val = mean(data)
@@ -290,20 +291,23 @@ def expHistPlotter(data: list, size: float = None, normal: bool = False, width: 
     
     return plt.bar(l[0], l[1], width = width, color = color, alpha = alpha, label = label)
 
-
+# calculate the p-value
 def pValue(data: list, size: float) -> float:
     ddof = binsCounter(data, size=size) - 2
     p_value = -integrate.quad(chi2PDF, np.inf , chiSquare(data,size=size), args=(ddof))[0]
     return p_value
 
+# calculate the standard error
+def errStd(data: list) -> float:
+    stdev = stDev(data)
+    return stdev/mh.sqrt(len(data))
+
+
 
 if __name__ == '__main__':
     
     # Path to data file
-    path = 'misure_A.1.csv'
-   # data = sorted(list(np.random.normal(1.32, 0.0455, 100)), key=float)
-    #for i in range(len(data)):
-    #    data[i] = round(data[i], 2) 
+    path = '/home/marco/Documents/Projects/data-analysis/data/pendulum/measures_A1.csv'
     
     data = dataReader(path)
     
@@ -312,20 +316,21 @@ if __name__ == '__main__':
     
     mean_val = mean(data)
     chiSquare(data, size=size)
-    
-    #freedom_degrees = binsCounter(data, size=size)-2
+
     fig, ax = plt.subplots(1, 2)
     
     p1 = ax[0]
     
-    distrPlotter(data, error_bars = True, normal=True, label='Obs Norm Distr', bicolor= False, size = size, err_color='#fffe00', ax=p1) 
+    distrPlotter(data, error_bars = True, normal=True, label='Obs Norm Distr', size = size, err_color='#fffe00', ax=p1) 
     gaussianPlotter(data, center = mean_val, label = 'Observed Gaussian', color='#6b0000', ax=p1)
     gaussianPlotter(data, center = 1.32, color='#00CC00', label = 'Expected Gaussian', ax=p1)
     expHistPlotter(data, normal = True, color='#ca03fc', width=size/6*5, alpha= 0.5, label='Exp Norm Distr', size = size, ax=p1)
 
     p2 = ax[1]
-
-    chi2PdfPlotter(data, 11, 0.05, size , ax=p2 ,color='#ffbd00')
+    
+    # degrees of freedom(number of bins - number of parameters(sigma and mean))
+    ddof = binsCounter(data, size) - 2
+    chi2PdfPlotter(data, 7, 0.05, size , ax=p2 ,color='#ffbd00')
 
     print('Occurences: ' + str(ocsCounter(data)))
     print('Mean value: ' + str(mean_val))    
@@ -333,7 +338,9 @@ if __name__ == '__main__':
     print('Bins size: ' + str(size))
     print('Chi squared: ' + str(chiSquare(data, size)))
     print('P value: ' + str(pValue(data, size)))
+    print('Standard error ' + str(errStd(data)))
     
-    # Show the graph and  the legend
+    
+    # Show the graph and the legend
     ax[0].legend(loc='upper right')
     plt.show()
